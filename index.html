@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lirionex — Global Financial Platform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root {
     --navy: #0B1F3A;
@@ -199,11 +200,7 @@
     background: var(--white); border-radius: 12px; margin-top: 20px;
   }
   .qr-mock.show { display: block; }
-  .qr-code {
-    width: 160px; height: 160px; margin: 0 auto 16px;
-    background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 0 0/10px 10px;
-    border: 4px solid var(--navy); border-radius: 4px;
-  }
+  #qr-canvas { margin: 0 auto 16px; display: block; }
   .qr-mock .qr-val { color: var(--navy); font-size: 15px; font-weight: 700; }
   .qr-mock .qr-sub { color: #555; font-size: 12px; margin-top: 4px; }
 
@@ -464,7 +461,7 @@
           <button class="btn-gold" style="width:100%" onclick="generateQR()">Gerar QR Code Pix</button>
 
           <div class="qr-mock" id="qr-area">
-            <div class="qr-code"></div>
+            <div id="qr-canvas"></div>
             <div class="qr-val" id="qr-val">R$ 1.000,00</div>
             <div class="qr-sub">Expira em 30 min · Expires in 30 min</div>
             <div style="margin-top:12px;font-size:11px;color:#888">Após pagamento o saldo é creditado automaticamente</div>
@@ -846,9 +843,25 @@
   }
 
   function generateQR() {
-    const brl = document.getElementById('deposit-brl').value || '1000';
-    document.getElementById('qr-val').textContent = 'R$ ' + parseFloat(brl).toLocaleString('pt-BR', {minimumFractionDigits:2});
+    const brl = parseFloat(document.getElementById('deposit-brl').value) || 1000;
+    const formatted = brl.toLocaleString('pt-BR', {minimumFractionDigits:2});
+    document.getElementById('qr-val').textContent = 'R$ ' + formatted;
     document.getElementById('qr-area').classList.add('show');
+
+    // Payload Pix fictício realista (formato EMV/BR Code)
+    const pixPayload = `00020126580014BR.GOV.BCB.PIX0136lirionex-demo@pagamento.com.br5204000053039865406${(brl * 100).toFixed(0).padStart(10,'0')}5802BR5916LIRIONEX DEMO6009SAO PAULO62140510LX${Date.now().toString().slice(-8)}6304`;
+
+    const container = document.getElementById('qr-canvas');
+    container.innerHTML = '';
+    new QRCode(container, {
+      text: pixPayload,
+      width: 180,
+      height: 180,
+      colorDark: '#0B1F3A',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+
     showToast('QR Code gerado!', 'Aguardando pagamento Pix · Expires in 30 min');
     setTimeout(() => {
       showToast('✅ Pix confirmado!', 'Saldo creditado em USD automaticamente');
